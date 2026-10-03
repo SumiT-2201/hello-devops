@@ -1,12 +1,15 @@
+# Kubernetes Service manifest for hello-devops
+# Exposes the pod deployment over a network endpoint
 apiVersion: v1
 kind: Service
 metadata:
   name: hello-devops-service
 spec:
-  type: LoadBalancer
+  # NodePort type allows accessing the service from outside the cluster node
+  type: NodePort
   selector:
     app: hello-devops
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 3000
+      port: 80         # Port exposed by the Kubernetes service
+      targetPort: 80   # Container port to forward traffic to

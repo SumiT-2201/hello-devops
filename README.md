@@ -1,67 +1,165 @@
 # hello-devops
 
-A minimal Node.js Express application designed strictly for learning DevOps, containerization, and deployment.
+A minimal, beginner-friendly **React + Vite** static web application designed strictly for learning hands-on DevOps, CI/CD, Containerization, Orchestration, and Cloud Deployment.
 
 ---
 
-## Commands for Deployment Practice
+## 1. Project Overview & DevOps Architecture
 
-### LOCAL
+This project serves as a practical, lightweight template to understand the entire modern software delivery lifecycle:
 
-Install dependencies and start the local Node.js server:
+### Architecture Flow:
+
+```text
+Developer
+   │
+   ▼
+Git (Version Control)
+   │
+   ▼
+GitHub (Remote Repository)
+   │
+   ▼
+GitHub Actions (CI Pipeline)
+   │
+   ├──▶ npm ci (Install clean dependencies)
+   └──▶ npm run build (Compile to dist/ artifact)
+   │
+   ├──▶ Docker Container (Bundles dist/ with Nginx web server)
+   │       └──▶ Local / Kubernetes (NodePort / Service mapping)
+   │
+   └──▶ AWS Amplify (Deploys static dist/ directly to Global CDN)
+```
+
+### Component Breakdown:
+
+- **React + Vite**: Fast, modern frontend framework producing a pure static single-page application (SPA) output in `dist/`.
+- **Git / GitHub**: Code versioning and central collaborative repository.
+- **GitHub Actions (CI)**: Automated continuous integration runner that tests and builds code on every push/PR to `main`.
+- **Nginx**: Lightweight, high-performance web server that serves static files and handles SPA client-side routing.
+- **Docker**: Containers that bundle the built application (`dist/`) and Nginx server into an isolated runtime package.
+- **Docker Compose**: Multi-container orchestrator utility for running services with standard configuration (`docker-compose.yml`).
+- **Kubernetes**: Production orchestrator that manages pod replicas, self-healing, and network routing for containerized apps.
+- **AWS Amplify**: Fully managed serverless hosting platform for automatic static site deployment directly from GitHub.
+
+---
+
+## 2. Local Development
+
+Install dependencies and start the local Vite development server:
 
 ```bash
+# 1. Install dependencies
 npm install
-npm start
+
+# 2. Run local development server
+npm run dev
 ```
+
+Open your browser at `http://localhost:3000` (or the URL shown in terminal).
 
 ---
 
-### DOCKER
+## 3. Production Build & Preview
 
-Build the Docker image and run it as a standalone container:
+Verify that the static build compiles cleanly:
 
 ```bash
+# 1. Compile production bundle to dist/
+npm run build
+
+# 2. Preview production build locally
+npm run preview
+```
+
+> **Note**: `npm run build` generates the production static bundle in the `dist/` folder.
+
+---
+
+## 4. Docker (Nginx Web Server)
+
+Build the multi-stage Docker image and run it locally:
+
+```bash
+# 1. Build Docker image
 docker build -t hello-devops .
-docker run -p 3000:3000 hello-devops
+
+# 2. Run container mapped to host port 8080
+docker run -p 8080:80 hello-devops
 ```
+
+Access the containerized app in your browser at `http://localhost:8080`.
 
 ---
 
-### DOCKER COMPOSE
+## 5. Docker Compose
 
-Build and run containers defined in `docker-compose.yml`, or stop and remove them:
+Run and stop containerized services using Docker Compose:
 
 ```bash
+# Build and start container in foreground
 docker compose up --build
+
+# Stop and remove containers
 docker compose down
 ```
 
+Access at `http://localhost:8080`.
+
 ---
 
-### KUBERNETES
+## 6. Kubernetes Deployment
 
-Apply Kubernetes configurations, inspect resource status, view logs, and clean up resources:
+Deploy the application to a local cluster (e.g., Minikube or Docker Desktop Kubernetes).
+
+> ⚠️ **Important**: Ensure your local Kubernetes cluster has access to the local Docker image (`hello-devops:latest`). If using Minikube, run `eval $(minikube docker-env)` before building the image, or load it with `minikube image load hello-devops:latest`.
 
 ```bash
+# 1. Apply Deployment & Service manifests
 kubectl apply -f k8s/
+
+# 2. Check pod and service status
 kubectl get pods
 kubectl get deployments
 kubectl get services
-kubectl logs
+
+# 3. Clean up Kubernetes resources
 kubectl delete -f k8s/
 ```
 
 ---
 
-## Key DevOps Concepts Explained
+## 7. GitHub Actions (Continuous Integration)
 
-- **Dockerfile**: A blueprint text file containing step-by-step instructions for building a Docker image.
-- **Docker image**: A lightweight, standalone, executable package that includes everything needed to run an application (code, runtime, libraries, environment variables).
-- **Docker container**: A running, isolated instance of a Docker image.
-- **Docker Compose**: A tool for defining and running multi-container Docker applications using a single configuration file (`docker-compose.yml`).
-- **Kubernetes Pod**: The smallest deployable unit in Kubernetes, wrapping one or more containers (usually one container per pod) with shared network and storage resources.
-- **Kubernetes Deployment**: A Kubernetes resource manager that defines the desired state for pods (e.g., number of replicas, image version) and handles rolling updates and scaling automatically.
-- **Kubernetes Service**: An abstraction layer that exposes a group of running pods over a network endpoint, providing load balancing and stable IP routing.
-- **Replica**: A duplicate copy of a running pod instance in a cluster to ensure high availability and load distribution.
-- **Health check**: Periodic probes (such as readiness and liveness checks) sent by the container orchestrator to an application endpoint (e.g., `/health`) to verify if the container is healthy and ready to serve traffic.
+The workflow file `.github/workflows/ci.yml` triggers automatically on:
+- Pushes to the `main` branch
+- Pull requests targeting `main`
+
+### Pipeline Steps:
+1. Checks out repository code.
+2. Sets up Node.js 20 LTS.
+3. Executes `npm ci` for clean dependency installation.
+4. Runs `npm run build` to ensure the project compiles without errors.
+
+---
+
+## 8. AWS Amplify Hosting
+
+AWS Amplify automatically builds and deploys your application using `amplify.yml`:
+
+- **Build Output Directory**: `dist`
+- **Build Command**: `npm run build`
+- **Pre-build Command**: `npm ci`
+
+No backend or server.js configuration is required.
+
+---
+
+## 9. Troubleshooting
+
+- **Port 8080 or 3000 already in use**:
+  Check running processes: `netstat -ano | findstr :8080` and stop conflicting services.
+- **Docker image not found in Kubernetes**:
+  Ensure image `hello-devops:latest` is built locally or pushed to a container registry.
+- **Vite Build Failures**:
+  Run `npm run build` locally to inspect syntax or module import issues.

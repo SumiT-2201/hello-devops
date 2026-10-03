@@ -1,23 +1,31 @@
-# Use official lightweight Node.js image
-FROM node:20-alpine
+# Stage 1: Build the static React + Vite application
+FROM node:20-alpine AS build
 
-# Set working directory inside container
 WORKDIR /app
 
 # Copy dependency definitions
 COPY package*.json ./
 
-# Install application dependencies
-RUN npm install
+# Install dependencies deterministically
+RUN npm ci
 
-# Copy application source code
+# Copy source code
 COPY . .
 
-# Default environment variable for PORT
-ENV PORT=3000
+# Build production bundle (outputs to /app/dist)
+RUN npm run build
 
-# Expose container port
-EXPOSE 3000
+# Stage 2: Serve application using Nginx
+FROM nginx:alpine
 
-# Command to run the application
-CMD ["npm", "start"]
+# Copy custom Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built static files from build stage
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Expose HTTP port 80
+EXPOSE 80
+
+# Start Nginx in foreground mode
+CMD ["nginx", "-g", "daemon off;"]
